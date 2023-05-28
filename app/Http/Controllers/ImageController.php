@@ -2,41 +2,53 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Image;
 use Illuminate\Http\Request;
 
 class ImageController extends Controller
 {
-     /**
-     * Write code on Method
-     *
-     * @return response()
-     */
     public function index()
     {
-        return view('image');
-    }
-    public function uploadImages(Request $request)
-    {
-        // dd($request);
-        $uploadedImages = [];
-    
-        if ($request->hasFile('images')) {
-            $images = $request->file('images');
-    
-            foreach ($images as $image) {
-                // Generate a unique filename
-                $filename = uniqid() . '.' . $image->getClientOriginalExtension();
-    
-                // Move the image to the desired folder (e.g., public/images)
-                $image->move('images', $filename);
-    
-                // Store the image URL
-                $uploadedImages[] = asset('images/' . $filename);
-            }
-        }
-    
-        // Return the uploaded images as a JSON response
-        return response()->json(['images' => $uploadedImages]);
+        $images = Image::orderBy('id','desc')->get();
+        return view('images.index', compact('images'));
     }
 
+    public function upload(Request $request)
+    {
+        $request->validate([
+            'image' => 'required|image|max:2048',
+        ]);
+
+        $image = $request->file('image');
+        $imageName = time() . '.' . $image->getClientOriginalExtension();
+        $image->move(public_path('uploads'), $imageName);
+
+        Image::create([
+            'path' => 'uploads/' . $imageName,
+        ]);
+        
+            return response()->json([
+                'message' => 'Image uploaded successfully.',
+                'image_path' => asset('uploads/' . $imageName),
+            ]);
+        
+     }
+
+    public function approve(Request $request)
+    {
+        $image = Image::findOrFail($request->image_id);
+        $image->status = 'approved';
+        $image->save();
+
+        return response()->json(['message' => 'Image approved successfully.']);
+    }
+
+    public function reject(Request $request)
+    {
+        $image = Image::findOrFail($request->image_id);
+        $image->status = 'rejected';
+        $image->save();
+
+        return response()->json(['message' => 'Image rejected successfully.']);
+    }
 }

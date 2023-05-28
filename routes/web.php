@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\TwitterSearchController;
-use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ImageController;
 
 use Illuminate\Support\Facades\Route;
@@ -17,20 +17,20 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
-    // return view('welcome');
-//     $querier = \Atymic\Twitter\Facade\Twitter::forApiV2()
-//     ->getQuerier();
-// $result = $querier
-//     ->withOAuth2Client()
-    // ->get('tweets/counts/recent', ['query' => 'foo']);
+    return view('welcome');
 });
 
-use App\Http\Controllers\UserController;
 
-Route::get('/twitter/search', [TwitterSearchController::class, 'search']);
+Route::middleware([
+    'auth:sanctum',
+    config('jetstream.auth_session'),
+    'verified'
+])->group(function () {
+    Route::get('/dashboard', [ImageController::class, 'index'])->name('dashboard');
+    Route::post('/upload', [ImageController::class, 'upload'])->name('upload');
+    Route::post('/approve', [ImageController::class, 'approve'])->name('approve');
+    Route::post('/reject', [ImageController::class, 'reject'])->name('reject');
 
-Route::get('firebase-phone-authentication', [AuthController::class, 'index']);
+    Route::get('/categories', [CategoryController::class, 'index'])->name('categories');
 
-Route::get('imagess', [ImageController::class, 'index']);
-
-Route::post('upload-images', [ImageController::class, 'uploadImages']);
+});
